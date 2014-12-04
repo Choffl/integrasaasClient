@@ -15,18 +15,145 @@ import org.glassfish.jersey.client.ClientProperties;
 
 import edu.udima.es.dominio.Cliente;
 
+/**
+ * Apliacion cliente de escritorio de los servicios web ubicado
+ * en https://integrasaas.herokuapp.com
+ * Muestra un menu interactivo sobre las peticiones del recurso
+ * cliente a modo de ejemplo.
+ * 
+ * Para probar todos los servicios se debe usar el cliente
+ * de SOAPUI u otro cliente REST
+ * 
+ * @author Sofia Sabariego
+ */
 public class RestClient {
-
+	
+	/*
+	 * URL base de los recursos,
+	 */
 	private static String DOMINIO = "https://integrasaas.herokuapp.com";
 
 
+	/**
+	 * Solicita una cantidad por pantalla y calcula el IVA.
+	 * 
+	 * @param args no acepta parametros
+	 * @throws IOException producidas por fallos en la lectura o escritura
+	 */
 	public static void main(String[] args) throws IOException {
 		Integer numeroConsulta;    
 
 		numeroConsulta = Integer.parseInt(seleccionarConsulta());
 		lanzarConsulta(numeroConsulta);
 	}
+	
 
+	/*
+	 * Elimina un cliente del que el usuario especifica el id
+	 */
+	private static void eliminarCliente() throws IOException {
+		escribir("Seleccione el identificador (id) del cliente: ");
+		String id = leer();
+		StringBuilder path = new StringBuilder("clientes");
+		path.append("/").append(id);
+
+		Response deleteResponse = getRestClient().target(DOMINIO).path(path.toString()).
+				request().accept(MediaType.APPLICATION_JSON).delete();
+		escribir(deleteResponse.getStatusInfo().toString());
+	}
+
+	/*
+	 * Modifica el cliente del que el usuario especifica su id
+	 * y proporciona los nuevos datos.
+	 */
+	private static void modificarCliente() throws IOException {
+		escribir("Seleccione el identificador (id) del cliente: ");
+		String id = leer();
+		StringBuilder path = new StringBuilder("clientes");
+		path.append("/").append(id);
+
+		Cliente clienteSelccionado = getRestClient().target(DOMINIO).path(path.toString()).
+				request().accept(MediaType.APPLICATION_JSON).get(Cliente.class);
+
+	
+		escribir("Introduzca nombre del cliente: ");
+		clienteSelccionado.setNombre(leer());
+		escribir("Introduzca los apellidos del cliente: ");
+		clienteSelccionado.setApellidos(leer());
+		escribir("Introduzca direccion del cliente: ");
+		clienteSelccionado.setDireccion(leer());
+		escribir("Introduzca password del cliente: ");
+		clienteSelccionado.setPassword(leer());
+		
+		Response postResponse = getRestClient().target(DOMINIO).path(path.toString()).
+				request().put(Entity.entity(clienteSelccionado, MediaType.APPLICATION_JSON));
+		
+		escribir(postResponse.getStatusInfo().toString());
+		
+	}
+
+	/*
+	 * Crea un cliente con los datos que el usuario
+	 * va introduciendo
+	 */
+	private static void crearCliente() throws IOException {
+		Cliente cliente = new Cliente();
+		escribir("Introduzca nombre del cliente: ");
+		cliente.setNombre(leer());
+		escribir("Introduzca los apellidos del cliente: ");
+		cliente.setApellidos(leer());
+		escribir("Introduzca DNI del cliente: ");
+		cliente.setDni(leer());
+		escribir("Introduzca direccion del cliente: ");
+		cliente.setDireccion(leer());
+		escribir("Introduzca password del cliente: ");
+		cliente.setPassword(leer());
+		
+		Response postResponse = getRestClient().target(DOMINIO).path("clientes").
+				request().post(Entity.entity(cliente, MediaType.APPLICATION_JSON));
+		escribir(postResponse.getStatusInfo().toString());
+	}
+
+	/*
+	 * Consulta los datos de un cliente del que el usuario especifica su id
+	 * el formato de datos devuelto depende del mime type seleccionado
+	 * por el usuario 
+	 */
+	private static void consultarCliente(String acceptedMime) throws IOException {
+		escribir("Seleccione el identificador (id) del cliente: ");
+		String id = leer();
+		StringBuilder path = new StringBuilder("clientes");
+		path.append("/").append(id);
+
+		Response response = getRestClient().target(DOMINIO).path(path.toString()).
+				request().accept(acceptedMime).get();
+
+		escribir(response.readEntity(String.class));
+
+	}
+
+	/*
+	 *  Consulta todos los clientes disponibles en el sistema integrasaas.
+	 *  El formato de datos devuelto depende del mime type especificado por el usuario.
+	 */
+	private static void consultarClientes(String acceptedMime) {
+		String responseEntity = getRestClient().target(DOMINIO).path("clientes").
+				request().accept(acceptedMime).get(String.class);
+
+		escribir(responseEntity);
+	}
+	
+	/*
+	 *  Crea un cliente rest especificando un TIME OUT ya que
+	 *  el acceso a los recursos del servidor heroku tarda en resolverse.
+	 */
+	private static Client getRestClient() {
+		ClientConfig configuration = new ClientConfig();
+		configuration.property(ClientProperties.CONNECT_TIMEOUT, 10000);
+		configuration.property(ClientProperties.READ_TIMEOUT, 10000);
+		return ClientBuilder.newClient(configuration);
+	}
+	
 	/*
 	 * Metodo para seleccionar la consulta de entre las opciones del menu.
 	 */
@@ -70,7 +197,7 @@ public class RestClient {
 		}
 	}
 
-	/**
+	/*
 	 *  Redirige a la consulta adecuada segun la opcion escogida.
 	 * @throws IOException 
 	 */
@@ -106,88 +233,6 @@ public class RestClient {
 		}
 		default: escribir("Opcion incorrecta");
 		}
-	}
-
-	private static void eliminarCliente() throws IOException {
-		escribir("Seleccione el identificador (id) del cliente: ");
-		String id = leer();
-		StringBuilder path = new StringBuilder("clientes");
-		path.append("/").append(id);
-
-		Response deleteResponse = getRestClient().target(DOMINIO).path(path.toString()).
-				request().accept(MediaType.APPLICATION_JSON).delete();
-		escribir(deleteResponse.getStatusInfo().toString());
-	}
-
-	private static void modificarCliente() throws IOException {
-		escribir("Seleccione el identificador (id) del cliente: ");
-		String id = leer();
-		StringBuilder path = new StringBuilder("clientes");
-		path.append("/").append(id);
-
-		Cliente clienteSelccionado = getRestClient().target(DOMINIO).path(path.toString()).
-				request().accept(MediaType.APPLICATION_JSON).get(Cliente.class);
-
-	
-		escribir("Introduzca nombre del cliente: ");
-		clienteSelccionado.setNombre(leer());
-		escribir("Introduzca los apellidos del cliente: ");
-		clienteSelccionado.setApellidos(leer());
-		escribir("Introduzca direccion del cliente: ");
-		clienteSelccionado.setDireccion(leer());
-		escribir("Introduzca password del cliente: ");
-		clienteSelccionado.setPassword(leer());
-		
-		Response postResponse = getRestClient().target(DOMINIO).path(path.toString()).
-				request().put(Entity.entity(clienteSelccionado, MediaType.APPLICATION_JSON));
-		
-		escribir(postResponse.getStatusInfo().toString());
-		
-	}
-
-	private static void crearCliente() throws IOException {
-		Cliente cliente = new Cliente();
-		escribir("Introduzca nombre del cliente: ");
-		cliente.setNombre(leer());
-		escribir("Introduzca los apellidos del cliente: ");
-		cliente.setApellidos(leer());
-		escribir("Introduzca DNI del cliente: ");
-		cliente.setDni(leer());
-		escribir("Introduzca direccion del cliente: ");
-		cliente.setDireccion(leer());
-		escribir("Introduzca password del cliente: ");
-		cliente.setPassword(leer());
-		
-		Response postResponse = getRestClient().target(DOMINIO).path("clientes").
-				request().post(Entity.entity(cliente, MediaType.APPLICATION_JSON));
-		escribir(postResponse.getStatusInfo().toString());
-	}
-
-	private static void consultarCliente(String acceptedMime) throws IOException {
-		escribir("Seleccione el identificador (id) del cliente: ");
-		String id = leer();
-		StringBuilder path = new StringBuilder("clientes");
-		path.append("/").append(id);
-
-		Response response = getRestClient().target(DOMINIO).path(path.toString()).
-				request().accept(acceptedMime).get();
-
-		escribir(response.readEntity(String.class));
-
-	}
-
-	private static void consultarClientes(String acceptedMime) {
-		String responseEntity = getRestClient().target(DOMINIO).path("clientes").
-				request().accept(acceptedMime).get(String.class);
-
-		escribir(responseEntity);
-	}
-	
-	private static Client getRestClient() {
-		ClientConfig configuration = new ClientConfig();
-		configuration.property(ClientProperties.CONNECT_TIMEOUT, 1000);
-		configuration.property(ClientProperties.READ_TIMEOUT, 1000);
-		return ClientBuilder.newClient(configuration);
 	}
 
 

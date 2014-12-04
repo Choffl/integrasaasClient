@@ -7,6 +7,13 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
+
+/**
+ * POJO con los datos de un cliente.
+ * Contiene anotaciones JAXB que ayudan a realizar en marshalling y 
+ * unmarshalling
+ * @author Sofia Sabariego
+ */
 @XmlRootElement(name="Cliente")
 @XmlAccessorType(XmlAccessType.PROPERTY)
 public class Cliente implements Serializable{
